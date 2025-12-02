@@ -9,9 +9,8 @@ import './App.css'
 //Para fazer o layout parecido com o de pokemon
 
 /*Coisa que faltam alterar:
-fundo com uma imagem de combate entre os zombies e as plantas,
-mudar imagem de cards,
-colocar caracteristicas dos personagens nas cartas (força, vida, velocidade...)
+*mudar imagem de cards
+*colocar caracteristicas dos personagens nas cartas (força, vida, velocidade...)
 */
 
 
