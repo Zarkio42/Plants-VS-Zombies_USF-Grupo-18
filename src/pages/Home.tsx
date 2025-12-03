@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'; 
 import type { FC, SyntheticEvent } from 'react'; 
 import { Leaf, Users, Plus, Search, Zap, Sun, Clock, Skull, X, Shield, FastForward } from 'lucide-react'; 
+import { useNavigate } from "react-router-dom";
 
 // URL Base da API 
 const BASE_API_URL = '/api';
@@ -10,6 +11,8 @@ const BASE_API_URL = '/api';
 // -----------------------------------------------------------
 // INTERFACES 
 // -----------------------------------------------------------
+
+
 
 interface RawCardData {
   name: string;
@@ -194,6 +197,9 @@ export default function PvZDeckHome() {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const navigate = useNavigate();
+
+
   // --- NOVOS ESTADOS PARA FILTRO E ORDENAÇÃO (ADICIONANDO OS NOVOS TIPOS) ---
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'All' | 'Plant' | 'Zombie'>('All');
@@ -230,6 +236,7 @@ export default function PvZDeckHome() {
 
         const finalRecharge = rawData.Recharge || rawData.recharge || 'N/A';
         
+
         return {
           name: rawData.name,
           description: rawData.description,
@@ -465,7 +472,9 @@ export default function PvZDeckHome() {
     setSelectedCard(null);
   };
   
-  const handleLogin = () => alert('Redirecionando para página de Login...');
+  const handleLogin = () => {
+  navigate('/login');
+};
   const handleCreateDeck = () => alert('Redirecionando para criação de Deck...');
 
 
@@ -511,6 +520,7 @@ export default function PvZDeckHome() {
               </button>
               
               <button
+              
                 onClick={handleCreateDeck}
                 className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-lg shadow-green-500/30 transition-all duration-200"
               >
