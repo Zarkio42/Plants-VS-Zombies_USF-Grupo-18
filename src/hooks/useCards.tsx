@@ -1,7 +1,6 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
 import type { RawCardData, Card } from "../interfaces/cards";
 
-// mesma BASE_API_URL que você usa no Home
 const BASE_API_URL = "/api";
 
 // -----------------------------------------------------------
@@ -61,7 +60,6 @@ const normalizeCard = (
 // -----------------------------------------------------------
 
 export function useCards() {
-  // 1) Buscar listas de nomes
   const plantsList = useQuery<string[], Error>({
     queryKey: ["plants"],
     queryFn: async () => {
@@ -85,7 +83,6 @@ export function useCards() {
   const listsLoading = plantsList.isLoading || zombiesList.isLoading;
   const listsError = plantsList.error || zombiesList.error;
 
-  // 2) Buscar detalhes em paralelo com useQueries
   const detailQueries = useQueries({
   queries: [
     ...(plantsList.data ?? []).map((name: string) => ({

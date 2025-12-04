@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCards } from "../hooks/useCards";
+import { useDecks } from "../hooks/useDecks";
 import type { Card, PlantCard, ZombieCard } from "../interfaces/cards";
 
 const BASE_API_URL = "/api";
@@ -207,6 +208,7 @@ const CARDS_PER_PAGE = 12;
 
 export default function PvZDeckHome() {
   const { cards, loading } = useCards();
+  const { decks } = useDecks()
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -230,6 +232,26 @@ export default function PvZDeckHome() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterType, sortBy]);
+
+  // -----------------------------------------------------------
+  // Busca os decks mais recentes
+  const recentDecks = useMemo(() => {
+  if (!decks || decks.length === 0) return [];
+
+  const safeTime = (value?: string) => {
+    if (!value) return 0;
+    const t = new Date(value).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  };
+
+  return [...decks]
+    .sort(
+      (a, b) =>
+        safeTime(b.updatedAt || b.createdAt) -
+        safeTime(a.updatedAt || a.createdAt)
+    )
+    .slice(0, 3);
+}, [decks]);
 
   // -----------------------------------------------------------
   // Lógica de Filtro e Classificação
@@ -434,25 +456,27 @@ export default function PvZDeckHome() {
       {/* Header */}
       <header className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 border-b-2 border-green-500 shadow-2xl z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {/* Logo + título */}
             <div className="flex items-center space-x-4">
               <div className="bg-gradient-to-br from-green-400 to-green-600 p-3 rounded-xl shadow-lg shadow-green-500/50">
                 <Leaf className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-purple-500 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-400 to-purple-500 bg-clip-text text-transparent">
                   Lawn of the Dead - Deck Builder
                 </h1>
-                <p className="text-gray-400 text-sm">
+                <p className="text-gray-400 text-xs sm:text-sm">
                   Plants vs Zombies 2 - Deck Collection
                 </p>
               </div>
             </div>
 
-            <div className="flex space-x-3">
+            {/* Botões à direita */}
+            <div className="flex flex-wrap gap-2 justify-start md:justify-end">
               <button
                 onClick={handleLogin}
-                className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2.5 px-5 rounded-lg border border-gray-700 hover:border-green-500 transition-all duration-200"
+                className="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg border border-gray-700 hover:border-green-500 transition-all duration-200 text-sm"
               >
                 <Users className="w-4 h-4" />
                 <span>Entrar</span>
@@ -460,7 +484,7 @@ export default function PvZDeckHome() {
 
               <button
                 onClick={handleCreateDeck}
-                className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-lg shadow-green-500/30 transition-all duration-200"
+                className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg shadow-green-500/30 transition-all duration-200 text-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Criar Deck</span>
@@ -472,11 +496,12 @@ export default function PvZDeckHome() {
 
       {/* Hero Section e Busca */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-8 mb-8">
-          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
-            {/* 1. Search Bar */}
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+        <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6 sm:p-8 mb-8">
+          {/* Linha de busca + filtros (stack no mobile, lado a lado no desktop) */}
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 items-stretch">
+            {/* Search Bar */}
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
               <input
                 type="text"
                 id="cardSearch"
@@ -484,12 +509,12 @@ export default function PvZDeckHome() {
                 placeholder="Busque por nome..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors text-sm sm:text-base"
               />
             </div>
 
-            {/* 2. Filtro por Tipo */}
-            <div className="w-full max-w-[10rem]">
+            {/* Filtro por Tipo */}
+            <div className="w-full">
               <label htmlFor="filterType" className="sr-only">
                 Filtrar por Tipo
               </label>
@@ -498,11 +523,9 @@ export default function PvZDeckHome() {
                 name="filterType"
                 value={filterType}
                 onChange={(e) =>
-                  setFilterType(
-                    e.target.value as "All" | "Plant" | "Zombie"
-                  )
+                  setFilterType(e.target.value as "All" | "Plant" | "Zombie")
                 }
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 appearance-none cursor-pointer transition-colors"
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 appearance-none cursor-pointer transition-colors text-sm"
               >
                 <option value="All">Todos os Tipos</option>
                 <option value="Plant">Plantas</option>
@@ -510,8 +533,8 @@ export default function PvZDeckHome() {
               </select>
             </div>
 
-            {/* 3. Classificar Por */}
-            <div className="w-full max-w-[14rem]">
+            {/* Classificar Por */}
+            <div className="w-full">
               <label htmlFor="sortBy" className="sr-only">
                 Classificar por
               </label>
@@ -532,7 +555,7 @@ export default function PvZDeckHome() {
                       | "zombie-first"
                   )
                 }
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 appearance-none cursor-pointer transition-colors"
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 appearance-none cursor-pointer transition-colors text-sm"
               >
                 <option value="name-asc">Nome (A-Z)</option>
                 <option value="name-desc">Nome (Z-A)</option>
@@ -549,8 +572,31 @@ export default function PvZDeckHome() {
             </div>
           </div>
 
+          {/* Decks salvos recentemente */}
+          {recentDecks.length > 0 && (
+            <div className="mt-6 w-full">
+              <h3 className="text-xs font-semibold text-gray-400 mb-2">
+                Decks salvos recentemente
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {recentDecks.map((deck) => (
+                  <button
+                    key={deck.id}
+                    onClick={() => console.log("Abrir deck:", deck.id)}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs sm:text-sm bg-gray-900 border border-gray-700 hover:border-green-500 hover:bg-gray-800 text-gray-200 transition-colors max-w-full"
+                  >
+                    <Zap className="w-3 h-3 text-green-400" />
+                    <span className="truncate max-w-[140px] sm:max-w-[180px]">
+                      {deck.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Estatísticas de Cards */}
-          <div className="flex justify-center md:justify-end space-x-4 mt-6">
+          <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-4 gap-3 mt-6">
             <div className="bg-gray-900/80 border border-green-500/30 px-6 py-3 rounded-lg text-center">
               <p className="text-green-400 font-bold text-2xl">
                 {filteredCards.length}
