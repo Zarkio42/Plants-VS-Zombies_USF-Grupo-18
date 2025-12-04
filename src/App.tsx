@@ -5,7 +5,7 @@ import Deck from './pages/Deck.tsx';
 
 function App() {
   return (
-<BrowserRouter>
+    <BrowserRouter basename="/Plants-VS-Zombies_USF-Grupo-18">
       <Routes>
         <Route path="/" element={<TelaLogin />} />
         <Route path="/login" element={<TelaLogin />} />
