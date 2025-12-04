@@ -572,6 +572,22 @@ export default function PvZDeckHome() {
             </div>
           </div>
 
+          {/* Estatísticas de Cards */}
+          <div className="flex gap-3 mt-6">
+            <div className="flex-1 bg-gray-900/80 border border-green-500/30 px-6 py-3 rounded-lg text-center">
+              <p className="text-green-400 font-bold text-2xl">
+                {filteredCards.length}
+              </p>
+              <p className="text-gray-400 text-xs">Exibidas</p>
+            </div>
+            <div className="flex-1 bg-gray-900/80 border border-green-500/30 px-6 py-3 rounded-lg text-center">
+              <p className="text-purple-400 font-bold text-2xl">
+                {cards.length}
+              </p>
+              <p className="text-gray-400 text-xs">Totais</p>
+            </div>
+          </div>
+
           {/* Decks salvos recentemente */}
           {recentDecks.length > 0 && (
             <div className="mt-6 w-full">
@@ -595,21 +611,6 @@ export default function PvZDeckHome() {
             </div>
           )}
 
-          {/* Estatísticas de Cards */}
-          <div className="flex flex-col sm:flex-row sm:justify-end sm:space-x-4 gap-3 mt-6">
-            <div className="bg-gray-900/80 border border-green-500/30 px-6 py-3 rounded-lg text-center">
-              <p className="text-green-400 font-bold text-2xl">
-                {filteredCards.length}
-              </p>
-              <p className="text-gray-400 text-xs">Exibidas</p>
-            </div>
-            <div className="bg-gray-900/80 border border-purple-500/30 px-6 py-3 rounded-lg text-center">
-              <p className="text-purple-400 font-bold text-2xl">
-                {cards.length}
-              </p>
-              <p className="text-gray-400 text-xs">Totais</p>
-            </div>
-          </div>
         </div>
 
         {/* Cards Grid */}

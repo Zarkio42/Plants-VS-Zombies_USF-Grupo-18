@@ -9,7 +9,7 @@ export interface Deck {
   updatedAt: string;
 }
 
-const STORAGE_KEY = "pvz-decks";
+const STORAGE_KEY = "pvz_decks";
 
 function loadDecksFromStorage(): Deck[] {
   try {

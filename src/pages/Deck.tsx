@@ -1,17 +1,11 @@
 // src/pages/DeckBuilder.tsx
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Leaf, Plus, Save, Trash2, Search, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCards } from "../hooks/useCards";
 import type { Card, PlantCard, ZombieCard } from "../interfaces/cards";
-
-interface SavedDeck {
-  id: string;
-  name: string;
-  cards: Card[];
-  createdAt: string;
-}
+import type { SavedDeck } from "../interfaces/saveDeck";
 
 const CARDS_PER_DECK = 12;
 
@@ -43,6 +37,11 @@ export default function DeckBuilder() {
     () => Array(CARDS_PER_DECK).fill(null)
   );
   const [deckName, setDeckName] = useState("");
+
+  // NOVOS ESTADOS
+  const [savedDecks, setSavedDecks] = useState<SavedDeck[]>([]);
+  const [activeDeckIndex, setActiveDeckIndex] = useState<number>(0);
+
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
   const [selectorSearch, setSelectorSearch] = useState("");
@@ -66,6 +65,50 @@ export default function DeckBuilder() {
         term ? card.name.toLowerCase().includes(term) : true
       );
   }, [cards, selectorFilterType, selectorSearch]);
+
+  // Helper para preencher os 12 slots a partir de um deck salvo
+  const loadDeckToState = (deck?: SavedDeck) => {
+    if (!deck) {
+      setDeckName("");
+      setSlots(Array(CARDS_PER_DECK).fill(null));
+      return;
+    }
+
+    setDeckName(deck.name);
+
+    const newSlots: (Card | null)[] = Array(CARDS_PER_DECK).fill(null);
+    deck.cards.forEach((card, index) => {
+      if (index < CARDS_PER_DECK) {
+        newSlots[index] = card;
+      }
+    });
+    setSlots(newSlots);
+  };
+
+  // Carrega decks do localStorage ao montar
+  useEffect(() => {
+    try {
+      const storedRaw = localStorage.getItem("pvz_decks");
+      if (!storedRaw) return;
+
+      const parsed: SavedDeck[] = JSON.parse(storedRaw);
+      const limited = parsed.slice(0, 3);
+
+      setSavedDecks(limited);
+
+      // Se havia mais de 3, já normaliza o localStorage
+      if (parsed.length !== limited.length) {
+        localStorage.setItem("pvz_decks", JSON.stringify(limited));
+      }
+
+      if (limited[0]) {
+        setActiveDeckIndex(0);
+        loadDeckToState(limited[0]);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar decks salvos:", error);
+    }
+  }, []);
 
   const handleSlotClick = (index: number) => {
     if (loading || cards.length === 0) return;
@@ -101,6 +144,14 @@ export default function DeckBuilder() {
     });
   };
 
+  // Selecionar qual deck (1, 2 ou 3) está ativo
+  const handleSelectDeckIndex = (index: number) => {
+    setActiveDeckIndex(index);
+    const deck = savedDecks[index];
+    loadDeckToState(deck);
+  };
+
+  // Salvar deck no slot atual (editar ou criar)
   const handleSaveDeck = () => {
     if (selectedCount !== CARDS_PER_DECK) {
       alert(`Seu deck precisa ter exatamente ${CARDS_PER_DECK} cartas.`);
@@ -113,36 +164,93 @@ export default function DeckBuilder() {
     }
 
     try {
-      const storedRaw = localStorage.getItem("pvz_decks");
-      const stored: SavedDeck[] = storedRaw ? JSON.parse(storedRaw) : [];
+      const nowIso = new Date().toISOString();
+      let newSavedDecks: SavedDeck[] = [];
 
-      const newDeck: SavedDeck = {
-        id:
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `${Date.now()}`,
-        name: deckName.trim(),
-        cards: slots.filter(Boolean) as Card[],
-        createdAt: new Date().toISOString(),
-      };
+      const existingDeck = savedDecks[activeDeckIndex];
 
-      localStorage.setItem(
-        "pvz_decks",
-        JSON.stringify([...stored, newDeck])
-      );
+      if (existingDeck) {
+        // Atualiza deck existente (edição)
+        const updatedDeck: SavedDeck = {
+          ...existingDeck,
+          name: deckName.trim(),
+          cards: slots.filter(Boolean) as Card[],
+          updatedAt: nowIso,
+        };
+
+        newSavedDecks = savedDecks.map((deck, idx) =>
+          idx === activeDeckIndex ? updatedDeck : deck
+        );
+      } else {
+        // Criar novo deck nesse índice (se ainda houver espaço)
+        if (savedDecks.length >= 3) {
+          alert("Você já possui 3 decks salvos. Exclua um para criar outro.");
+          return;
+        }
+
+        const newDeck: SavedDeck = {
+          id:
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `${Date.now()}`,
+          name: deckName.trim(),
+          cards: slots.filter(Boolean) as Card[],
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        };
+
+        const insertIndex =
+          activeDeckIndex > savedDecks.length
+            ? savedDecks.length
+            : activeDeckIndex;
+
+        const clone = [...savedDecks];
+        clone.splice(insertIndex, 0, newDeck);
+        newSavedDecks = clone;
+      }
+
+      setSavedDecks(newSavedDecks);
+      localStorage.setItem("pvz_decks", JSON.stringify(newSavedDecks));
       alert("Deck salvo com sucesso!");
-
-      // Se quiser resetar o construtor após salvar, descomente:
-      // setSlots(Array(CARDS_PER_DECK).fill(null));
-      // setDeckName("");
     } catch (error) {
       console.error(error);
       alert("Não foi possível salvar o deck. Tente novamente.");
     }
   };
 
+  // Excluir o deck do slot atual
+  const handleDeleteCurrentDeck = () => {
+    const current = savedDecks[activeDeckIndex];
+    if (!current) {
+      // Não há deck salvo nesse índice, só limpa a edição
+      loadDeckToState(undefined);
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja excluir o deck "${current.name}"?`
+    );
+    if (!confirmDelete) return;
+
+    const newSavedDecks = savedDecks.filter(
+      (_, idx) => idx !== activeDeckIndex
+    );
+
+    // Ajusta índice ativo
+    const newIndex = Math.max(0, activeDeckIndex - 1);
+
+    setSavedDecks(newSavedDecks);
+    setActiveDeckIndex(newIndex);
+    localStorage.setItem("pvz_decks", JSON.stringify(newSavedDecks));
+
+    const nextDeck = newSavedDecks[newIndex];
+    loadDeckToState(nextDeck);
+  };
+
   const isSaveDisabled =
     selectedCount !== CARDS_PER_DECK || !deckName.trim();
+
+  const canDelete = !!savedDecks[activeDeckIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900">
@@ -188,14 +296,18 @@ export default function DeckBuilder() {
       {/* Conteúdo principal */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-gradient-to-r from-gray-800/60 to-gray-900/60 backdrop-blur-sm rounded-2xl border border-gray-700 p-6 sm:p-8">
-          {/* Topo: nome do deck + contador */}
+          {/* Topo: nome do deck + contador + índice 1/2/3 */}
           <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white">
                 Crie seu deck personalizado
               </h2>
               <p className="text-gray-400 text-sm sm:text-base mt-1">
-                Escolha <span className="font-semibold text-green-400">12 cartas</span> de plantas e zumbis para usar em suas batalhas.
+                Escolha{" "}
+                <span className="font-semibold text-green-400">
+                  12 cartas
+                </span>{" "}
+                de plantas e zumbis para usar em suas batalhas.
               </p>
             </div>
 
@@ -217,13 +329,50 @@ export default function DeckBuilder() {
                 />
               </div>
 
-              <div className="flex items-center justify-between sm:justify-center gap-2 px-3 py-2 rounded-lg bg-gray-900 border border-gray-700">
-                <span className="text-xs text-gray-400">
-                  Cartas selecionadas
-                </span>
-                <span className="text-lg font-extrabold text-green-400">
-                  {selectedCount}/{CARDS_PER_DECK}
-                </span>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between sm:justify-center gap-2 px-3 py-2 rounded-lg bg-gray-900 border border-gray-700">
+                  <span className="text-xs text-gray-400">
+                    Cartas selecionadas
+                  </span>
+                  <span className="text-lg font-extrabold text-green-400">
+                    {selectedCount}/{CARDS_PER_DECK}
+                  </span>
+                </div>
+
+                {/* Índice 1 / 2 / 3 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">
+                    Deck atual:
+                  </span>
+                  <div className="flex gap-2">
+                    {[0, 1, 2].map((idx) => {
+                      const isActive = activeDeckIndex === idx;
+                      const deck = savedDecks[idx];
+
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectDeckIndex(idx)}
+                          className={`px-3 py-1.5 rounded-lg border text-xs text-center min-w-[52px] ${
+                            isActive
+                              ? "bg-green-600 border-green-400 text-white"
+                              : "bg-gray-900 border-gray-700 text-gray-200 hover:bg-gray-800"
+                          }`}
+                        >
+                          <span className="block font-semibold">
+                            {idx + 1}
+                          </span>
+                          {deck && (
+                            <span className="block text-[10px] text-gray-300 truncate max-w-[72px]">
+                              {deck.name}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -337,19 +486,35 @@ export default function DeckBuilder() {
               Voltar para batalha
             </button>
 
-            <button
-              type="button"
-              onClick={handleSaveDeck}
-              disabled={isSaveDisabled}
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold shadow-lg shadow-green-500/30 transition-all ${
-                isSaveDisabled
-                  ? "bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-700"
-                  : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white border border-green-400"
-              }`}
-            >
-              <Save className="w-4 h-4" />
-              <span>Salvar deck</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleDeleteCurrentDeck}
+                disabled={!canDelete}
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-all ${
+                  !canDelete
+                    ? "bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed"
+                    : "bg-transparent text-red-400 border-red-500 hover:bg-red-500/10"
+                }`}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Excluir deck atual</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveDeck}
+                disabled={isSaveDisabled}
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-bold shadow-lg shadow-green-500/30 transition-all ${
+                  isSaveDisabled
+                    ? "bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-700"
+                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white border border-green-400"
+                }`}
+              >
+                <Save className="w-4 h-4" />
+                <span>Salvar deck</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
