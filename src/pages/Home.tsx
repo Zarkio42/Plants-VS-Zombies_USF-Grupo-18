@@ -1,5 +1,3 @@
-// Home.tsx (Lawn of the Dead - Deck Builder)
-
 import { useState, useMemo, useEffect } from "react";
 import type { FC, SyntheticEvent } from "react";
 import {
@@ -14,12 +12,13 @@ import {
   X,
   Shield,
   FastForward,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCards } from "../hooks/useCards";
 import type { Card, PlantCard, ZombieCard } from "../interfaces/cards";
 
-// URL Base da API (apenas usada na mensagem de erro)
 const BASE_API_URL = "/api";
 
 // -----------------------------------------------------------
@@ -210,7 +209,6 @@ export default function PvZDeckHome() {
   const { cards, loading } = useCards();
   const navigate = useNavigate();
 
-  // Filtros / ordenação
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"All" | "Plant" | "Zombie">(
     "All"
@@ -226,13 +224,9 @@ export default function PvZDeckHome() {
     | "zombie-first"
   >("name-asc");
 
-  // Modal
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-
-  // Paginação
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Sempre que filtro/busca/ordem mudar, volta para página 1
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterType, sortBy]);
@@ -341,16 +335,40 @@ export default function PvZDeckHome() {
   // -----------------------------------------------------------
   // Paginação baseada em filteredCards
   // -----------------------------------------------------------
+  const totalPages = Math.max(1, Math.ceil(filteredCards.length / CARDS_PER_PAGE));
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredCards.length / CARDS_PER_PAGE)
-  );
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
 
   const paginatedCards = useMemo(() => {
-    const startIndex = (currentPage - 1) * CARDS_PER_PAGE;
-    return filteredCards.slice(startIndex, startIndex + CARDS_PER_PAGE);
+    const start = (currentPage - 1) * CARDS_PER_PAGE;
+    const end = start + CARDS_PER_PAGE;
+    return filteredCards.slice(start, end);
   }, [filteredCards, currentPage]);
+
+  const MAX_VISIBLE_PAGES = 4;
+
+  const visiblePages = useMemo(() => {
+    if (totalPages <= MAX_VISIBLE_PAGES) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    let start = Math.max(
+      1,
+      currentPage - Math.floor(MAX_VISIBLE_PAGES / 2)
+    );
+    let end = start + MAX_VISIBLE_PAGES - 1;
+
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - MAX_VISIBLE_PAGES + 1;
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [totalPages, currentPage]);
 
   // -----------------------------------------------------------
   // Funções Auxiliares
@@ -392,7 +410,9 @@ export default function PvZDeckHome() {
     navigate("/login");
   };
 
-  const handleCreateDeck = () => alert("Redirecionando para criação de Deck...");
+  const handleCreateDeck = () => {
+  navigate('/deck');
+  };
 
   // -----------------------------------------------------------
   // Render
@@ -693,21 +713,42 @@ export default function PvZDeckHome() {
             </div>
 
             {/* Paginação numérica */}
-            <div className="flex justify-center items-center space-x-2 mt-8">
+            <div className="flex flex-wrap justify-center items-center gap-2 mt-8">
+              {/* Botão Anterior */}
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                className={`px-3 py-1 rounded-md text-sm font-semibold border border-gray-700 ${
+                className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs sm:text-sm font-semibold border border-gray-700 ${
                   currentPage === 1
                     ? "text-gray-500 cursor-not-allowed"
                     : "text-gray-200 hover:bg-gray-800"
                 }`}
               >
-                Anterior
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Anterior</span>
               </button>
 
-              {Array.from({ length: totalPages }, (_, idx) => {
-                const page = idx + 1;
+              {/* Primeira página + reticências à esquerda, se necessário */}
+              {visiblePages[0] > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    className={`w-8 h-8 rounded-md text-sm font-semibold border ${
+                      currentPage === 1
+                        ? "bg-green-600 border-green-400 text-white"
+                        : "border-gray-700 text-gray-300 hover:bg-gray-800"
+                    }`}
+                  >
+                    1
+                  </button>
+                  {visiblePages[0] > 2 && (
+                    <span className="text-gray-400 text-sm px-1">...</span>
+                  )}
+                </>
+              )}
+
+              {/* Páginas visíveis (janela de até 5 páginas) */}
+              {visiblePages.map((page) => {
                 const isActive = page === currentPage;
                 return (
                   <button
@@ -724,24 +765,44 @@ export default function PvZDeckHome() {
                 );
               })}
 
+              {/* Reticências à direita + última página, se necessário */}
+              {visiblePages[visiblePages.length - 1] < totalPages && (
+                <>
+                  {visiblePages[visiblePages.length - 1] < totalPages - 1 && (
+                    <span className="text-gray-400 text-sm px-1">...</span>
+                  )}
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    className={`w-8 h-8 rounded-md text-sm font-semibold border ${
+                      currentPage === totalPages
+                        ? "bg-green-600 border-green-400 text-white"
+                        : "border-gray-700 text-gray-300 hover:bg-gray-800"
+                    }`}
+                  >
+                    {totalPages}
+                  </button>
+                </>
+              )}
+
+              {/* Botão Próxima */}
               <button
                 disabled={currentPage === totalPages}
                 onClick={() =>
-                  setCurrentPage((page) =>
-                    Math.min(totalPages, page + 1)
-                  )
+                  setCurrentPage((page) => Math.min(totalPages, page + 1))
                 }
-                className={`px-3 py-1 rounded-md text-sm font-semibold border border-gray-700 ${
+                className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs sm:text-sm font-semibold border border-gray-700 ${
                   currentPage === totalPages
                     ? "text-gray-500 cursor-not-allowed"
                     : "text-gray-200 hover:bg-gray-800"
                 }`}
               >
-                Próxima
+                <span className="hidden sm:inline">Próxima</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </>
         )}
+        
       </section>
 
       {/* MODAL DE DETALHES */}
@@ -760,7 +821,7 @@ export default function PvZDeckHome() {
             Pronto para montar seu deck?
           </h2>
           <p className="text-gray-400 mb-6">
-            Selecione suas 16 plantas favoritas e crie estratégias imbatíveis
+            Selecione suas 12 plantas favoritas e crie estratégias imbatíveis
             contra os zumbis!
           </p>
           <button

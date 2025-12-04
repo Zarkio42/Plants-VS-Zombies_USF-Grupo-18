@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home.tsx'
 import TelaLogin from './pages/TelaLogin.tsx'
+import Deck from './pages/Deck.tsx';
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
         <Route path="/" element={<TelaLogin />} />
         <Route path="/login" element={<TelaLogin />} />
         <Route path="/batalha" element={<Home />} />
+        <Route path="/deck" element={<Deck />} />
       </Routes>
     </BrowserRouter>
   )
