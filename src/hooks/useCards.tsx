@@ -1,7 +1,9 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
 import type { RawCardData, Card } from "../interfaces/cards";
 
-const BASE_API_URL = "/api";
+const BASE_API_URL = import.meta.env.MODE === "development"
+    ? "/api"
+    : "https://pvz-2-api.vercel.app/api";
 
 // -----------------------------------------------------------
 // Função auxiliar para normalizar os dados crus da API

@@ -1,13 +1,10 @@
-// vite.config.js (ou .ts)
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/Plants-VS-Zombies_USF-Grupo-18/',
   server: {
-    // Configuração do Proxy para PvZ API
     proxy: {
       '/api': { 
         target: 'https://pvz-2-api.vercel.app', 
