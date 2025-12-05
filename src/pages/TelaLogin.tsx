@@ -37,7 +37,7 @@ export default function PvZLoginScreen() {
         return;
       }
       alert(`Conta criada com sucesso como ${selectedFaction === 'zombie' ? 'ZUMBI' : 'PLANTA'}! 🎮`);
-      // Limpar campos e voltar para login
+
       setUsername('');
       setEmail('');
       setPassword('');
@@ -344,7 +344,7 @@ export default function PvZLoginScreen() {
 
           {/* Footer */}
           <div className="bg-black/40 p-4 text-center text-xs text-gray-500 border-t border-gray-800">
-            <p>© 2024 Plants vs Zombies Cards. Defenda ou invada!</p>
+            <p>Defenda ou invada!</p>
           </div>
         </div>
 
