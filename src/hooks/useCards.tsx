@@ -63,12 +63,14 @@ export function useCards() {
   const plantsList = useQuery<string[], Error>({
     queryKey: ["plants"],
     queryFn: async () => {
-      const r = await fetch(`${BASE_API_URL}/plants`);
+      const r = await fetch(`${BASE_API_URL}/plants`, {
+        cache: "no-store",
+      });
       if (!r.ok) throw new Error("Erro ao carregar lista de plantas");
       return (await r.json()) as string[];
     },
-    staleTime: 1000 * 60 * 5, // 5 min
-  });
+    staleTime: 1000 * 60 * 5,
+});
 
   const zombiesList = useQuery<string[], Error>({
     queryKey: ["zombies"],
@@ -90,7 +92,9 @@ export function useCards() {
       enabled: !listsLoading,
       staleTime: 1000 * 60 * 10,
       queryFn: async (): Promise<Card> => {
-        const r = await fetch(`${BASE_API_URL}/plants/${name}`);
+        const r = await fetch(`${BASE_API_URL}/plants/${name}`, {
+          cache: "no-store",
+        });
         if (!r.ok) {
           throw new Error(`Erro ao carregar planta: ${name}`);
         }
@@ -103,7 +107,9 @@ export function useCards() {
       enabled: !listsLoading,
       staleTime: 1000 * 60 * 10,
       queryFn: async (): Promise<Card> => {
-        const r = await fetch(`${BASE_API_URL}/zombies/${name}`);
+        const r = await fetch(`${BASE_API_URL}/zombies/${name}`, {
+          cache: "no-store",
+        });
         if (!r.ok) {
           throw new Error(`Erro ao carregar zumbi: ${name}`);
         }
