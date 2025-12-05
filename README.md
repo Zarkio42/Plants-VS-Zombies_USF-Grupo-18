@@ -2,6 +2,8 @@
 
 SPA em **React + TypeScript + Vite** para explorar cartas de *Plants vs Zombies 2*, montar decks e salvar até **3 composições** no navegador.
 
+🚀 Deploy: [https://plants-vs-zombies-usf-grupo-18.vercel.app/batalha](https://plants-vs-zombies-usf-grupo-18.vercel.app/batalha)
+
 <img width="1900" height="905" alt="image" src="https://github.com/user-attachments/assets/07bb73a5-a5e2-4d59-89cb-5d7f2902c19b" />
 
 
