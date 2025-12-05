@@ -2,7 +2,7 @@
   "rewrites": [
         {
         "source": "/api/:path*",
-        "destination": "api.seusite.com*"
+        "destination": "https://pvz-2-api.vercel.app*"
         }
     ]
 }
