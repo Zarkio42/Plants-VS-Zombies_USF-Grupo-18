@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/Plants-VS-Zombies_USF-Grupo-18/',
+  base: '/',
   server: {
     proxy: {
       '/api': { 
